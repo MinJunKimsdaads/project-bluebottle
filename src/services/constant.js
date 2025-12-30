@@ -1,5 +1,9 @@
-const SERVER_URL = 'http://localhost:4002';
-const KOSPI200_URL = '/api/kospi200/all';
-const SALES_URL = '/api/sales/search';
-const DAYS_URL = '/api/indicator/search';
-const NASDAQ_URL = '/api/nasdaq'
+export const SERVER_URL = 'http://localhost:4002';
+export const KOSPI200_URL = '/api/kospi200/all';
+export const SALES_URL = '/api/sales/search';
+export const DAYS_URL = '/api/indicator/search';
+export const NASDAQ_URL = '/api/nasdaq'
+export const DOLLALINDEX_URL = '/api/dollarIndex/search';
+export const FUTURES_URL = '/api/futures/search';
+export const SECTOR_URL = '/api/sector/kospi';
+export const WICS_URL = '/api/WICS/search';

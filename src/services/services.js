@@ -1,192 +1,153 @@
-//등락률에 따른 필터링
-export const getDataFilteredUpRate = (list,upRate,downRate) => {
-    return list.filter((i)=>{
-        const late = Number(i.rate);
-        return late >= downRate && late <= upRate;
-    })
-}
+//시장 환경 점수 (25점)
+export const calMarketScore = (future,nasdaq,dollar) => {
+    let futureScore = 0;
+    let nasdaqScore = 0;
+    let dollarScroe = 0;
 
-//매출, 영업익에 따른 필터링
-export const getDataFilteredSales = async (list) => {
-    try{
-       const result = [];
-       await Promise.all(
-        list.map(async (i) => {
-            const code = i.code;
-            await fetch(`http://localhost:4002/api/sales/search?code=${code}`).then((result)=>{
-                return result.json();
-            }).then((data)=>{
-                if(data.lastSales && data.lastProfit){
-                    const lastSales = Number(data.lastSales);
-                    const lastProfit = Number(data.lastProfit);
-                    if(lastProfit > 0 && lastSales > 0){
-                        result.push({
-                            ...i,
-                            trading:data.trading,
-                        });
-                    }
-                }
-            });
-        })
-       ) 
-       return result;
-    }catch(e){
-        console.error(e);
+    if(future >= 0.5){
+        futureScore = 10;
+    }else if(future >= 0.2 && future < 0.5){
+        futureScore = 7;
+    }else if(future >= -0.2 && future < 0.2){
+        futureScore = 3;
+    }else if(future <= -0.5){
+        // futureScore = -10
     }
-}
 
-//5일 지표 데이터
-export const get5DaysData = async (list) => {
-    try{
-       const result = [];
-       await Promise.all(
-        list.map(async (i) => {
-            const code = i.code;
-            await fetch(`http://localhost:4002/api/indicator/search?code=${code}`).then((result)=>{
-                return result.json();
-            }).then((data)=>{
-                const newData = {
-                    ...i,
-                    indicator:data,
-                }
-                result.push(newData);
-            });
-        })
-       ) 
-       return result;
-    }catch(e){
-        console.error(e);
+    if(nasdaq >= 0.6){
+        nasdaqScore = 8;
+    }else if(future >= 0.2 && future < 0.6){
+        nasdaqScore = 5;
+    }else if(future >= -0.2 && future < 0.2){
+        nasdaqScore = 2;
+    }else if(future <= -0.6){
+        // nasdaqScore = -8
     }
-}
 
-//거래대금 추세 계산
-const calValueScore = (data) => {
-    const values = data.map(d => Number(d.close) * Number(d.amount));
-    const latestValue = values[0];
-    const avgValue = values.reduce((a,b)=> a+b,0) / values.length;
-    
-    const ratio = latestValue / avgValue;
-
-    let score = 0;
-    if (ratio >= 1.5) score = 30;
-    else if (ratio >= 1.0) score = 15;
-    return {ratio, score};
-}
-
-//거래량 추세 계산
-const calcAmountScore = (data) => {
-  const volumes = data.map(d => Number(d.amount));
-  const latestVolume = volumes[0]; // 최신 거래량
-  const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
-
-  const ratio = latestVolume / avgVolume;
-
-  let score = 0;
-  if (ratio >= 1.5) score = 30;
-  else if (ratio >= 1.0) score = 15;
-
-  return { ratio, score };
-}
-//변동성 점수 계산
-const calcVolatilityScore = (data) => {
-  const closes = data.map(d => Number(d.close));
-
-  // 일일 수익률 계산 (어제 대비 오늘)
-  const returns = [];
-  for (let i = 0; i < closes.length - 1; i++) {
-    const r = (closes[i] - closes[i + 1]) / closes[i + 1];
-    returns.push(r);
-  }
-
-  // 표준편차 계산
-  const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
-  const variance = returns.reduce((a, b) => a + (b - mean) ** 2, 0) / returns.length;
-  const stdev = Math.sqrt(variance);
-
-  // 점수화 (예시: 상위 변동성 선호)
-  let score = 0;
-  if (stdev > 0.015) score = 20; // 1.5% 이상
-  else if (stdev > 0.01) score = 10; // 1% 이상
-
-  return { stdev, score };
-}
-//단기 추세 계산
-const calcTrendScore = (data) => {
-  const closes = data.map(d => Number(d.close));
-  const latestClose = closes[0];
-  const sma5 = closes.reduce((a, b) => a + b, 0) / closes.length;
-
-  const diffRate = (latestClose - sma5) / sma5;
-
-  let score = 0;
-  if (diffRate >= 0) score = 20;
-  else if (diffRate >= -0.01) score = 10; // -1%까지는 가산점
-
-  return { diffRate, score };
-}
-
-//최근 5일 순매수 계산
-const calcTradingScore = (data) => {
-  let score = 0;
-  let foreigner = 0;
-  let organ = 0;
-  data.forEach(i => {
-    foreigner += Number(i.foreigner);
-    organ += Number(i.organ);
-  });
-
-  if (foreigner > 0) score += 10;
-  if (organ > 0) score += 10;
-
-  return { foreigner, organ, score };
-}
-
-const calcSectorScore = (sector) => {
-    let score = 0;
-    if(Number(sector) > 0){
-        score += 10;
+    if(dollar <= -0.4){
+        dollarScroe = 7;
+    }else if(dollar >= -0.1 && dollar <= 0.1){
+        dollarScroe = 3;
+    }else if(dollar >= 0.4){
+        // dollarScroe = -7;
     }
-    return {score};
+
+    return futureScore + nasdaqScore + dollarScroe;
 }
+//섹터 모멘텀 (15점)
+export const calSectorScore = (sector) => {
+    let sectorScore = 0;
+    if(sector >= 1.5){
+        sectorScore = 15
+    }else if(sector >= 0.7 && sector < 1.5){
+        sectorScore = 10
+    }else if(sector >= 0.2 && sector < 0.7){
+        sectorScore = 5
+    }else if(sector <= -0.5){
+        // sectorScore = -10
+    }
+    return sectorScore;
+}
+//종목 가격 위치 (15점)
+export const calPricePosition = (daysData) => {
+    let pricePositionScore = 0;
+    const threeDayHigh = Math.max(Number(daysData[0].high), Number(daysData[1].high), Number(daysData[2].high));
+    const threeDayLow  = Math.min(Number(daysData[0].low), Number(daysData[1].low), Number(daysData[2].low));
+    const pricePosition = (Number(daysData[0].close) - threeDayLow) / (threeDayHigh - threeDayLow);
 
+    if(Number(daysData[0].close) > Number(daysData[1].high) && Number(daysData[0].close) > Number(daysData[2].high)){
+        pricePositionScore = 15;
+    }else if(pricePosition >= 0.8){
+        pricePositionScore = 10;
+    }else if(pricePosition >= 0.4 && pricePosition < 0.8){
+        pricePositionScore = 5;
+    }else if(pricePosition < 0.4){
+        // pricePositionScore = -5;
+    }
 
-//최종 점수 합산
-export const scoreStock = (data) => {
-  return data.map((i)=>{
-    const volume = calcAmountScore(i.indicator); //거래대금
-    const volatility = calcVolatilityScore(i.indicator); //외국인/기관
-    const trend = calcTrendScore(i.indicator); //단기 추세
-    const value = calValueScore(i.indicator); //변동성
-    const tradingSum = calcTradingScore(i.trading); //거래량
-    const sector = calcSectorScore(i.sector);
+    return pricePositionScore;
+}
+//추세 (20점)
+export const calUpCount = (daysData) => {
+    let upCountScore = 0;
+    let closeStrengthScore = 0;
 
-    // 가중치 적용
-    const total =
-      (value.score / 30) * 30 +          // 거래대금: 30점 만점
-      (tradingSum.score / 20) * 30 +     // 외국인/기관: 30점 만점
-      (trend.score / 20) * 20 +          // 단기 추세: 20점 만점
-      (volatility.score / 20) * 10 +     // 변동성: 10점 만점
-      (volume.score / 30) * 10 +          // 거래량: 10점 만점
-      (sector.score / 30) * 10;          // 동일업종 등락률: 10점 만점
+    if(Number(daysData[0].close) > Number(daysData[1].close) && Number(daysData[0].close) > Number(daysData[2].close) && Number(daysData[1].close) > Number(daysData[2].close)){
+        upCountScore = 10;
+    }else if(Number(daysData[0].close) > Number(daysData[1].close) || Number(daysData[0].close) > Number(daysData[2].close)){
+        upCountScore = 6;
+    }else{
+        // upCountScore = -5;
+    }
 
+    const closeStrength = (Number(daysData[0].close) - Number(daysData[0].low)) / (Number(daysData[0].high) - Number(daysData[0].low));
 
-      return {
-        ...i,
-        volume,
-        volatility,
-        value,
-        trend,
-        tradingSum,
-        sector,
-        total
+    if(closeStrength >= 0.8){
+        closeStrengthScore = 10;
+    }else if(closeStrength >= 0.6 && closeStrength < 0.8){
+        closeStrengthScore = 7;
+    }else if(closeStrength >= 0.4 && closeStrength < 0.6){
+        closeStrengthScore = 3;
+    }else{
+        // closeStrengthScore = -5;
+    }
+
+    return upCountScore + closeStrengthScore;
+}
+//거래량 (10점)
+export const calAmount = (daysData) => {
+    let amountScore = 0;
+    const avgAmount = (Number(daysData[0].amount) + Number(daysData[1].amount) + Number(daysData[2].amount)) / 3;
+    const amountRatio = Number(daysData[0].amount) / avgAmount;
+
+    if(amountRatio >= 1.8){
+        amountScore = 10;
+    }else if(amountRatio >= 1.4){
+        amountScore = 7;
+    }else if(amountRatio >= 1.0){
+        amountScore = 3;
+    }else if(amountRatio < 0.7){
+        // amountScore = -5;  
     };
-  })
+    return amountScore;
+}
+//수급 (15점)
+export const calTrading = (trading) => {
+    let score = 0;
+
+    let bothBuyDays = 0;
+    let bothSellDays = 0;
+
+    for (let i = 0; i < 3; i++) {
+        const foreigner = Number(trading[i].foreigner);
+        const organ = Number(trading[i].organ);
+
+        if (foreigner > 0 && organ > 0) bothBuyDays++;
+        if (foreigner < 0 && organ < 0) bothSellDays++;
+    }
+
+    // 🔥 동시 순매수
+    if (bothBuyDays === 3) score = 15;
+    else if (bothBuyDays === 2) score = 10;
+    else if (bothBuyDays === 1) score = 5;
+
+    // ❌ 동시 순매도 (강한 패널티)
+    // if (bothSellDays === 3) score = -10;
+    // else if (bothSellDays >= 2) score = -5;
+
+    // 🚫 개인만 매수 (외인·기관 지속 매도)
+    const allForeignSell = trading.every(t => Number(t.foreigner) < 0);
+    const allOrganSell = trading.every(t => Number(t.organ) < 0);
+
+    // if (allForeignSell && allOrganSell) {
+    //     score = -10;
+    // }
+
+    return score;
 }
 
-
-export const getRankedData = (data,count) => {
-    const sortedByScore = data.sort((a,b) => b.total - a.total);
-    return sortedByScore.slice(0,count);
+//환산
+export const calRadarScore = (score,originScore) => {
+    return score / originScore * 100;
 }
-
 

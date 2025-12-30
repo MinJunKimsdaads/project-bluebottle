@@ -5,13 +5,16 @@ export const getFuturesData = async (req, res) => {
     try{
         const data = {};
         const response = await fetch(
-            `https://finance.naver.com/world/sise.naver?symbol=NAS@IXIC&fdtc=0`
+            `https://api.stock.naver.com/futures/nation/USA`
         );
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const html = iconv.decode(buffer, "EUC-KR");
-    
-        const $ = cheerio.load(html);
+        const result = await response.json()
+        const SNP = result.find((i) => i.reutersCode === 'EScv1');
+        
+        data['futures'] = Number(SNP.closePrice);
+        data['futuresPoint'] = Number(SNP.fluctuationsRatio);
+
+        // API 응답
+        res.status(200).json(data);
 
     }catch (err) {
         console.error(err);

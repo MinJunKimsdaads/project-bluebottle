@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const Kospi200 = () => {
-    useEffect()
+    // useEffect()
     return(
         <div></div>
     )

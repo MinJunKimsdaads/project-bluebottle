@@ -12,6 +12,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       contextIsolation: true, //contextIsolation: true: 웹 페이지와 Node.js context를 격리 (보안 향상)//웹 콘텐츠에 sandbox 적용 (더 높은 보안)
       sandbox: true, //웹 콘텐츠에 sandbox 적용 (더 높은 보안)
@@ -22,14 +23,14 @@ function createWindow() {
   fork(serverPath);
 
 
-  const indexPath = path.join(__dirname, '../build/index.html');
+  const indexPath = path.join(__dirname, '../dist/index.html');
 
   if (fs.existsSync(indexPath)) {
     win.loadFile(indexPath); //dist/index.html이 존재하면 창에 로드하고
   } else {
     console.error('❌ index.html not found. Run `npm run build` first.');
   }
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {

@@ -25,7 +25,7 @@ export const get5DaysData = async (req, res) => {
 
     $(".type2").each((_, el)=>{
         const trs = $(el).find("tr");
-        for(let i=2;i<7;i++){
+        for(let i=2;i<5;i++){
             const tds = $(trs[i]).find("td");
             const data = {
                 close:$(tds[1]).find('span').text().replace(/\s+/g, "").replace(/,/g, ""),

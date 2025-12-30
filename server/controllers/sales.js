@@ -28,11 +28,12 @@ export const getSalesData = async (req, res) => {
 
     $(".invest_trend .right tbody").each((_, el)=>{
         const trs = $(el).find("tr");
-        for(let i=1;i<=5;i++){
+        for(let i=1;i<=3
+          ;i++){
             const tds = $(trs[i]).find("td");
             const list = {
-                foreigner:$(tds[2]).find('em').text().replace(/\s+/g, "").replace(/,/g, ""),
-                organ:$(tds[3]).find('em').text().replace(/\s+/g, "").replace(/,/g, ""),
+                foreigner:$(tds[2]).find('em').text().replace(/\s+/g, "").replace(/,/g, "").replace('+',''),
+                organ:$(tds[3]).find('em').text().replace(/\s+/g, "").replace(/,/g, "").replace('+',''),
             }
             data['trading'].push(list)
         }
